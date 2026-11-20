@@ -1,0 +1,36 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+      - name: Initialize Android project files if missing
+        run: flutter create . --platforms=android
+      - name: Ensure lib/main.dart exists
+        run: |
+          mkdir -p lib
+          if [ ! -f lib/main.dart ] && [ -f main.dart ]; then
+            mv main.dart lib/main.dart
+          fi
+      - name: Get packages
+        run: flutter pub get
+      - name: Build APK
+        run: flutter build apk --release
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fingerprint-reminder-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
